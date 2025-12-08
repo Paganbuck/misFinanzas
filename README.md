@@ -1,2 +1,48 @@
-# misFinanzas
-App básica creada con algo de ayuda y correcciones de la IA para calcular mis finanzas
+misFinanzas
+
+Proyecto en Java (consola) — FASE 1: Sistema de gestión de finanzas personales (FinpApp - versión simplificada)
+
+Descripción
+
+Aplicación de consola para registrar categorías, movimientos (ingresos/gastos) y ver resúmenes mensuales. Todo funciona en memoria (sin base de datos) según las pautas del PDF de la Fase 1.
+
+Clases principales implementadas:
+
+Main — punto de entrada.
+
+MenuConsola — interfaz por consola (menú).
+
+Categoria — representa una categoría (nombre, tipo).
+
+Movimiento — representa un ingreso o gasto (tipo, monto, fecha, descripción, categoría).
+
+PresupuestoMensual — presupuesto para un año/mes.
+
+FinanzasService — lógica simple (almacena listas en memoria, cálculos).
+
+Paquete usado en el código: misFinanzas.java
+
+Requisitos
+
+Java JDK 17
+
+IntelliJ IDEA (recomendado) o cualquier editor/IDE que acepte Java
+
+Git y cuenta en GitHub
+
+Estructura del proyecto
+misFinanzas/
+ └─ src/
+    └─ misFinanzas/
+       └─ java/
+           Main.java
+           MenuConsola.java
+           FinanzasService.java
+           Categoria.java
+           Movimiento.java
+           PresupuestoMensual.java
+
+
+Las clases van dentro de src/misFinanzas/java y deben comenzar con:
+
+package misFinanzas.java;
