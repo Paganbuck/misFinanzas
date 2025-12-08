@@ -24,8 +24,6 @@ Paquete usado en el código: misFinanzas.java
 
 Requisitos
 
-Java JDK 17
-
 IntelliJ IDEA (recomendado) o cualquier editor/IDE que acepte Java
 
 Git y cuenta en GitHub
@@ -42,7 +40,14 @@ misFinanzas/
            Movimiento.java
            PresupuestoMensual.java
 
+Ejemplo mínimo de uso en la app (flujo)
 
-Las clases van dentro de src/misFinanzas/java y deben comenzar con:
+Ejecutar Main.
 
-package misFinanzas.java;
+Elegir 1 para “Registrar categoría” y crear, por ejemplo, Ocio tipo VARIABLE.
+
+Elegir 2 para “Registrar movimiento”: tipo INGRESO monto 200000 categoría Ocio.
+
+Registrar gasto: tipo GASTO monto 50000 categoría Ocio.
+
+Elegir 4 “Ver resumen del mes”: verás ingresos, gastos y saldo.
