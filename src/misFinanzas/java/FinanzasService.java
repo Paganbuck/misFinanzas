@@ -6,84 +6,77 @@ import java.util.List;
 
 public class FinanzasService {
 
-    private List<Categoria> categorias = new ArrayList<>();
-    private List<Movimiento> movimientos = new ArrayList<>();
-    private List<PresupuestoMensual> presupuestos = new ArrayList<>();
+    private final List<Categoria> categorias = new ArrayList<>();
+    private final List<Movimiento> movimientos = new ArrayList<>();
+    private final List<PresupuestoMensual> presupuestos = new ArrayList<>();
 
+    // 1. Registrar categoría
     public void agregarCategoria(String nombre, String tipo) {
-        nombre = normalizar(nombre);
-        tipo = normalizar(tipo);
-        categorias.add(new Categoria(nombre, tipo));
+        if (buscarCategoriaPorNombre(nombre) != null) return;
+        categorias.add(new Categoria(nombre.trim(), tipo.trim().toUpperCase()));
     }
 
-
+    // listar categorías
     public List<Categoria> listarCategorias() {
-        return categorias;
+        return new ArrayList<>(categorias);
     }
 
+    // buscar categoria por nombre (ignora mayúsc/minúsc y espacios)
     public Categoria buscarCategoriaPorNombre(String nombre) {
-        nombre = normalizar(nombre);
+        if (nombre == null) return null;
+        String buscado = nombre.trim().toLowerCase();
         for (Categoria c : categorias) {
-            if (normalizar(c.getNombre()).equals(nombre)) {
-                return c;
-            }
+            if (c.getNombre().trim().toLowerCase().equals(buscado)) return c;
         }
         return null;
     }
 
-    public void agregarMovimiento(String tipo,
-                                  double monto,
-                                  LocalDate fecha,
-                                  String descripcion,
-                                  String nombreCategoria) {
-
-        Categoria categoria = buscarCategoriaPorNombre(nombreCategoria);
-
-        if (categoria == null) {
-            System.out.println("Categoría no encontrada.");
-            return;
+    // 2. Registrar movimiento
+    public void agregarMovimiento(String tipo, double monto, LocalDate fecha, String descripcion, String nombreCategoria) {
+        Categoria cat = buscarCategoriaPorNombre(nombreCategoria);
+        if (cat == null) {
+            // si no existe la categoría, crearla como VARIABLE por defecto
+            cat = new Categoria(nombreCategoria.trim(), "VARIABLE");
+            categorias.add(cat);
         }
-
-        movimientos.add(new Movimiento(tipo, monto, fecha, descripcion, categoria));
+        movimientos.add(new Movimiento(tipo.trim().toUpperCase(), monto, fecha, descripcion, cat));
     }
 
-    public double calcularGastosMes(int anio, int mes) {
-        double total = 0;
-
+    // 3. Listar movimientos de un mes
+    public List<Movimiento> listarMovimientosDeMes(int anio, int mes) {
+        List<Movimiento> salida = new ArrayList<>();
         for (Movimiento m : movimientos) {
-            if (m.getFecha().getYear() == anio &&
-                    m.getFecha().getMonthValue() == mes &&
-                    m.getTipo().equalsIgnoreCase("GASTO")) {
-                total += m.getMonto();
+            if (m.getFecha().getYear() == anio && m.getFecha().getMonthValue() == mes) {
+                salida.add(m);
             }
         }
-        return total;
+        return salida;
     }
 
+    // calcular ingresos de un mes
     public double calcularIngresosMes(int anio, int mes) {
-        double total = 0;
-
-        for (Movimiento m : movimientos) {
-            if (m.getFecha().getYear() == anio &&
-                    m.getFecha().getMonthValue() == mes &&
-                    m.getTipo().equalsIgnoreCase("INGRESO")) {
-                total += m.getMonto();
-            }
+        double total = 0.0;
+        for (Movimiento m : listarMovimientosDeMes(anio, mes)) {
+            if ("INGRESO".equalsIgnoreCase(m.getTipo())) total += m.getMonto();
         }
         return total;
     }
 
-    public void configurarPresupuestoMensual(int anio, int mes, double montoTotal) {
-
-        PresupuestoMensual existente = null;
-
-        for (PresupuestoMensual p : presupuestos) {
-            if (p.getAnio() == anio && p.getMes() == mes) {
-                existente = p;
-                break;
-            }
+    // calcular gastos de un mes
+    public double calcularGastosMes(int anio, int mes) {
+        double total = 0.0;
+        for (Movimiento m : listarMovimientosDeMes(anio, mes)) {
+            if ("GASTO".equalsIgnoreCase(m.getTipo())) total += m.getMonto();
         }
+        return total;
+    }
 
+    // 4. Configurar presupuesto mensual
+    public void configurarPresupuestoMensual(int anio, int mes, double montoTotal) {
+        PresupuestoMensual existente = null;
+        for (PresupuestoMensual p : presupuestos) {
+            if (p.getAnio() == anio && p.getMes() == mes) { existente = p; break; }
+        }
         if (existente != null) {
             existente.setMontoTotal(montoTotal);
         } else {
@@ -91,91 +84,31 @@ public class FinanzasService {
         }
     }
 
+    // obtener presupuesto (null si no existe)
     public Double obtenerPresupuestoMes(int anio, int mes) {
         for (PresupuestoMensual p : presupuestos) {
-            if (p.getAnio() == anio && p.getMes() == mes) {
-                return p.getMontoTotal();
-            }
+            if (p.getAnio() == anio && p.getMes() == mes) return p.getMontoTotal();
         }
         return null;
     }
 
-    public double totalIngresosAcumulados() {
-        return movimientos.stream()
-                .filter(m -> m.getTipo().equalsIgnoreCase("INGRESO"))
-                .mapToDouble(m -> m.getMonto())
-                .sum();
-    }
-
-    public double totalGastosAcumulados() {
-        return movimientos.stream()
-                .filter(m -> m.getTipo().equalsIgnoreCase("GASTO"))
-                .mapToDouble(m -> m.getMonto())
-                .sum();
-    }
-
-    public double saldoAcumulado() {
-        return totalIngresosAcumulados() - totalGastosAcumulados();
-    }
-
-    public double calcularIngresosTotales() {
-        return movimientos.stream()
-                .filter(m -> m.getTipo().equalsIgnoreCase("INGRESO"))
-                .mapToDouble(Movimiento::getMonto)
-                .sum();
-    }
-
-    public double calcularGastosTotales() {
-        return movimientos.stream()
-                .filter(m -> m.getTipo().equalsIgnoreCase("GASTO"))
-                .mapToDouble(Movimiento::getMonto)
-                .sum();
-    }
-
-    public double calcularSaldoTotal() {
-        return calcularIngresosTotales() - calcularGastosTotales();
-    }
-
+    // 5. Imprimir resumen mensual (usa ingresos, gastos, presupuesto)
     public void imprimirResumenMes(int anio, int mes) {
-
-        double ingresosMes = calcularIngresosMes(anio, mes);
-        double gastosMes = calcularGastosMes(anio, mes);
-        double saldoMes = ingresosMes - gastosMes;
-
+        double ingresos = calcularIngresosMes(anio, mes);
+        double gastos = calcularGastosMes(anio, mes);
+        double saldo = ingresos - gastos;
         Double presupuesto = obtenerPresupuestoMes(anio, mes);
 
         System.out.println("Resumen del mes " + mes + "/" + anio);
-        System.out.println("Ingresos del mes: " + ingresosMes);
-        System.out.println("Gastos del mes: " + gastosMes);
-        System.out.println("Saldo del mes: " + saldoMes);
-
-        double saldoTotal = calcularSaldoTotal();
-        System.out.println("Saldo acumulado total: " + saldoTotal);
-
+        System.out.println("Ingresos: " + ingresos);
+        System.out.println("Gastos: " + gastos);
+        System.out.println("Saldo: " + saldo);
         if (presupuesto != null) {
             System.out.println("Presupuesto: " + presupuesto);
-            if (gastosMes > presupuesto) {
-                System.out.println("Advertencia: Gastos mayores al presupuesto!");
-            } else {
-                System.out.println("Dentro del presupuesto.");
-            }
+            if (gastos > presupuesto) System.out.println("Advertencia: gastos mayores al presupuesto!");
+            else System.out.println("Dentro del presupuesto.");
         } else {
             System.out.println("No hay presupuesto configurado para este mes.");
         }
     }
-
-    private String normalizar(String texto) {
-        texto = texto.toLowerCase().trim();
-
-        texto = texto
-                .replace("á", "a")
-                .replace("é", "e")
-                .replace("í", "i")
-                .replace("ó", "o")
-                .replace("ú", "u")
-                .replace("ñ", "n");
-
-        return texto;
-    }
-
 }

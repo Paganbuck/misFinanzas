@@ -5,126 +5,117 @@ import java.util.Scanner;
 
 public class MenuConsola {
 
-    private FinanzasService service = new FinanzasService();
-    private Scanner sc = new Scanner(System.in);
+    private final FinanzasService service = new FinanzasService();
+    private final Scanner sc = new Scanner(System.in);
 
     private int leerEnteroSeguro() {
         while (!sc.hasNextInt()) {
             System.out.println("Número inválido. Intenta de nuevo: ");
             sc.next();
         }
-        return sc.nextInt();
+        int v = sc.nextInt();
+        sc.nextLine();
+        return v;
     }
 
     public void iniciar() {
-
         int opcion;
-
         do {
             System.out.println("=== Mis Finanzas ===");
             System.out.println("1. Registrar categoría");
             System.out.println("2. Registrar movimiento");
-            System.out.println("3. Ver gasto de un mes");
+            System.out.println("3. Listar movimientos de un mes");
             System.out.println("4. Ver resumen del mes");
             System.out.println("5. Listar categorías");
+            System.out.println("6. Configurar presupuesto mensual");
             System.out.println("0. Salir");
             System.out.print("Opción: ");
-
             opcion = leerEnteroSeguro();
-            sc.nextLine();
 
             switch (opcion) {
                 case 1 -> registrarCategoria();
                 case 2 -> registrarMovimiento();
-                case 3 -> verGastoMes();
+                case 3 -> listarMovimientosMes();
                 case 4 -> verResumenMes();
                 case 5 -> listarCategorias();
+                case 6 -> configurarPresupuesto();
+                case 0 -> System.out.println("Saliendo...");
+                default -> System.out.println("Opción inválida.");
             }
-
         } while (opcion != 0);
     }
 
     private void registrarCategoria() {
         System.out.print("Nombre categoría: ");
         String nombre = sc.nextLine();
-
         System.out.print("Tipo (FIJO/VARIABLE): ");
         String tipo = sc.nextLine();
-
         service.agregarCategoria(nombre, tipo);
-        System.out.println("Categoría registrada.");
+        System.out.println("Categoría guardada.");
     }
-
-    private String normalizar(String texto) {
-        texto = texto.toLowerCase().trim();
-
-        texto = texto
-                .replace("á", "a")
-                .replace("é", "e")
-                .replace("í", "i")
-                .replace("ó", "o")
-                .replace("ú", "u")
-                .replace("ñ", "n");
-
-        return texto;
-    }
-
 
     private void registrarMovimiento() {
         System.out.print("Tipo (INGRESO/GASTO): ");
         String tipo = sc.nextLine();
-
         System.out.print("Monto: ");
-        double monto = leerEnteroSeguro();
-        sc.nextLine();
-
+        double monto = 0;
+        try { monto = Double.parseDouble(sc.nextLine()); } catch (NumberFormatException e) { System.out.println("Monto inválido."); return; }
         System.out.print("Descripción: ");
         String descripcion = sc.nextLine();
-
         System.out.print("Categoría: ");
-        String categoria = normalizar(sc.nextLine());
-
-
-        System.out.print("Año: ");
+        String categoria = sc.nextLine();
+        System.out.print("Año (ej. 2025): ");
         int anio = leerEnteroSeguro();
-
-        System.out.print("Mes: ");
+        System.out.print("Mes (1-12): ");
         int mes = leerEnteroSeguro();
-        sc.nextLine();
-
-        LocalDate fecha = LocalDate.of(anio, mes, 1);
+        LocalDate fecha;
+        try { fecha = LocalDate.of(anio, mes, 1); } catch (Exception e) { System.out.println("Fecha inválida."); return; }
 
         service.agregarMovimiento(tipo, monto, fecha, descripcion, categoria);
-        System.out.println("Movimiento registrado.");
+        System.out.println("Movimiento guardado.");
     }
 
-    private void verGastoMes() {
+    private void listarMovimientosMes() {
         System.out.print("Año: ");
         int anio = leerEnteroSeguro();
-
         System.out.print("Mes: ");
         int mes = leerEnteroSeguro();
-        sc.nextLine();
-
-        double total = service.calcularGastosMes(anio, mes);
-        System.out.println("Gasto total: " + total);
+        var lista = service.listarMovimientosDeMes(anio, mes);
+        if (lista.isEmpty()) System.out.println("No hay movimientos en ese mes.");
+        else {
+            for (Movimiento m : lista) {
+                System.out.println(m.getFecha() + " - " + m.getTipo() + " - " + m.getMonto() + " - " + m.getCategoria().getNombre() + " - " + m.getDescripcion());
+            }
+        }
     }
 
     private void verResumenMes() {
         System.out.print("Año: ");
         int anio = leerEnteroSeguro();
-
         System.out.print("Mes: ");
         int mes = leerEnteroSeguro();
-        sc.nextLine();
-
         service.imprimirResumenMes(anio, mes);
     }
 
     private void listarCategorias() {
-        System.out.println("Categorías registradas:");
-        for (Categoria c : service.listarCategorias()) {
-            System.out.println("- " + c.getNombre() + " (" + c.getTipo() + ")");
+        var cats = service.listarCategorias();
+        if (cats.isEmpty()) System.out.println("No hay categorías registradas.");
+        else {
+            System.out.println("Categorías:");
+            for (Categoria c : cats) System.out.println("- " + c.toString());
         }
     }
+
+    private void configurarPresupuesto() {
+        System.out.print("Año: ");
+        int anio = leerEnteroSeguro();
+        System.out.print("Mes: ");
+        int mes = leerEnteroSeguro();
+        System.out.print("Monto total del presupuesto: ");
+        double monto = 0;
+        try { monto = Double.parseDouble(sc.nextLine()); } catch (NumberFormatException e) { System.out.println("Monto inválido."); return; }
+        service.configurarPresupuestoMensual(anio, mes, monto);
+        System.out.println("Presupuesto guardado.");
+    }
 }
+

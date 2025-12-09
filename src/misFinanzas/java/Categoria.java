@@ -1,9 +1,8 @@
 package misFinanzas.java;
 
 public class Categoria {
-
     private String nombre;
-    private String tipo; // FIJO o VARIABLE
+    private String tipo; // "FIJO" o "VARIABLE"
 
     public Categoria(String nombre, String tipo) {
         this.nombre = nombre;
@@ -17,5 +16,5 @@ public class Categoria {
     public String toString() {
         return nombre + " (" + tipo + ")";
     }
-
 }
+

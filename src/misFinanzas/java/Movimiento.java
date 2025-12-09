@@ -3,7 +3,7 @@ package misFinanzas.java;
 import java.time.LocalDate;
 
 public class Movimiento {
-    private String tipo; // INGRESO / GASTO
+    private String tipo; // "INGRESO" o "GASTO"
     private double monto;
     private LocalDate fecha;
     private String descripcion;

@@ -14,9 +14,5 @@ public class PresupuestoMensual {
     public int getAnio() { return anio; }
     public int getMes() { return mes; }
     public double getMontoTotal() { return montoTotal; }
-
-    public void setMontoTotal(double montoTotal) {
-        this.montoTotal = montoTotal;
-    }
+    public void setMontoTotal(double montoTotal) { this.montoTotal = montoTotal; }
 }
-
