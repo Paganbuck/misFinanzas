@@ -12,8 +12,9 @@ public class FinanzasService {
 
     // 1. Registrar categoría
     public void agregarCategoria(String nombre, String tipo) {
+        if (nombre == null || nombre.trim().isEmpty()) return;
         if (buscarCategoriaPorNombre(nombre) != null) return;
-        categorias.add(new Categoria(nombre.trim(), tipo.trim().toUpperCase()));
+        categorias.add(new Categoria(nombre.trim(), tipo == null ? "VARIABLE" : tipo.trim().toUpperCase()));
     }
 
     // listar categorías
@@ -26,27 +27,30 @@ public class FinanzasService {
         if (nombre == null) return null;
         String buscado = nombre.trim().toLowerCase();
         for (Categoria c : categorias) {
-            if (c.getNombre().trim().toLowerCase().equals(buscado)) return c;
+            if (c.getNombre() != null && c.getNombre().trim().toLowerCase().equals(buscado)) return c;
         }
         return null;
     }
 
     // 2. Registrar movimiento
     public void agregarMovimiento(String tipo, double monto, LocalDate fecha, String descripcion, String nombreCategoria) {
+        if (tipo == null || fecha == null) return;
+        String tipoNorm = tipo.trim().toUpperCase();
         Categoria cat = buscarCategoriaPorNombre(nombreCategoria);
         if (cat == null) {
             // si no existe la categoría, crearla como VARIABLE por defecto
-            cat = new Categoria(nombreCategoria.trim(), "VARIABLE");
+            String nombre = (nombreCategoria == null || nombreCategoria.trim().isEmpty()) ? "Sin categoría" : nombreCategoria.trim();
+            cat = new Categoria(nombre, "VARIABLE");
             categorias.add(cat);
         }
-        movimientos.add(new Movimiento(tipo.trim().toUpperCase(), monto, fecha, descripcion, cat));
+        movimientos.add(new Movimiento(tipoNorm, monto, fecha, descripcion == null ? "" : descripcion, cat));
     }
 
     // 3. Listar movimientos de un mes
     public List<Movimiento> listarMovimientosDeMes(int anio, int mes) {
         List<Movimiento> salida = new ArrayList<>();
         for (Movimiento m : movimientos) {
-            if (m.getFecha().getYear() == anio && m.getFecha().getMonthValue() == mes) {
+            if (m.getFecha() != null && m.getFecha().getYear() == anio && m.getFecha().getMonthValue() == mes) {
                 salida.add(m);
             }
         }
@@ -78,6 +82,7 @@ public class FinanzasService {
             if (p.getAnio() == anio && p.getMes() == mes) { existente = p; break; }
         }
         if (existente != null) {
+            // espera que PresupuestoMensual tenga setMontoTotal(double)
             existente.setMontoTotal(montoTotal);
         } else {
             presupuestos.add(new PresupuestoMensual(anio, mes, montoTotal));
@@ -111,4 +116,55 @@ public class FinanzasService {
             System.out.println("No hay presupuesto configurado para este mes.");
         }
     }
+
+    // Comparar gastos vs presupuesto (impresión)
+    public void compararGastosConPresupuesto(int anio, int mes) {
+        double gastos = calcularGastosMes(anio, mes);
+        Double presupuesto = obtenerPresupuestoMes(anio, mes);
+
+        System.out.println("=== Comparación de Gastos y Presupuesto ===");
+        System.out.println("Mes: " + mes + "/" + anio);
+        System.out.println("Gastos del mes: " + gastos);
+
+        if (presupuesto == null) {
+            System.out.println("No hay presupuesto configurado para este mes.");
+            return;
+        }
+
+        System.out.println("Presupuesto del mes: " + presupuesto);
+
+        if (gastos > presupuesto) {
+            System.out.println("Te pasaste del presupuesto por: " + (gastos - presupuesto));
+        } else if (gastos < presupuesto) {
+            System.out.println("Estás por debajo del presupuesto por: " + (presupuesto - gastos));
+        } else {
+            System.out.println("Gastaste exactamente tu presupuesto.");
+        }
+    }
+
+    // Calcula saldo acumulado hasta un mes (inclusive)
+    public double calcularSaldoAcumuladoHasta(int anio, int mes) {
+        double ingresos = 0.0;
+        double gastos = 0.0;
+
+        for (Movimiento m : movimientos) {
+            if (m.getFecha() == null) continue;
+            int ma = m.getFecha().getYear();
+            int mm = m.getFecha().getMonthValue();
+
+            // si la fecha del movimiento es anterior al año consultado, o mismo año y mes <= mes consultado
+            if (ma < anio || (ma == anio && mm <= mes)) {
+                if ("INGRESO".equalsIgnoreCase(m.getTipo())) ingresos += m.getMonto();
+                if ("GASTO".equalsIgnoreCase(m.getTipo())) gastos += m.getMonto();
+            }
+        }
+        return ingresos - gastos;
+    }
+
+    // Saldo acumulado hasta hoy
+    public double calcularSaldoAcumuladoHastaHoy() {
+        LocalDate hoy = LocalDate.now();
+        return calcularSaldoAcumuladoHasta(hoy.getYear(), hoy.getMonthValue());
+    }
+
 }
